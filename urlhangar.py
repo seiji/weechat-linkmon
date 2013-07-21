@@ -35,6 +35,8 @@ class URLBuffer:
         weechat.buffer_set(url_buffer, "key_bind_meta-ctrl-P",   "/urlh **up")
         weechat.buffer_set(url_buffer, "key_bind_meta-ctrl-N",   "/urlh **down")
         weechat.buffer_set(url_buffer, "key_bind_meta-meta2-1./~", "/urlh **scroll_top")
+        weechat.buffer_set(url_buffer, "key_bind_meta-ctrl-V",   "/urlh **scroll_top")
+        weechat.buffer_set(url_buffer, "key_bind_ctrl-V",        "/urlh **scroll_bottom")
         weechat.buffer_set(url_buffer, "key_bind_meta-meta2-4~", "/urlh **scroll_bottom")
         weechat.buffer_set(url_buffer, "title","Lists the urls in the applications")
         weechat.buffer_set(url_buffer, "display", "1")
@@ -45,11 +47,19 @@ class URLBuffer:
         info = message
         info = info.replace(url, '')
 
+        nick = ''
         match = re.search('(^|,)nick_([^,]*)(,|$)', tags)
-        nick = match.group(2)
-        
+        if match:
+            nick = match.group(2)
+
+        if nick == 'seiji':
+            return
+
         # if notice
         info = info.replace("Notice(" + nick + "):", '')
+        info = re.sub(r'\[\d{2}:\d{2}:\d{2}\]', '', info) # remove time stamp
+        info = re.sub(r'^\s+', '', info)
+
         self.url_infos[url] =  {
             "url": url,
             "buffer": buffer_name[0],
@@ -76,7 +86,7 @@ class URLBuffer:
                 self.current_line = self.current_line +1
                 self.refresh_line (self.current_line - 1)
                 self.refresh_line (self.current_line)
-                self.scroll_buffer
+                self.scroll_buffer()
 
         elif args == "scroll_top":
             temp_current = self.current_line
@@ -85,18 +95,18 @@ class URLBuffer:
             self.refresh_line (self.current_line)
             weechat.command(self.url_buffer, "/window scroll_top")
             pass
+
         elif args == "scroll_bottom":
             temp_current = self.current_line
-            self.current_line =  len(self.urls)
+            self.current_line =  len(self.urls) - 1
             self.refresh_line (temp_current)
             self.refresh_line (self.current_line)
             weechat.command(self.url_buffer, "/window scroll_bottom")
+
         elif args == "enter":
             url = self.urls[self.current_line]
-            weechat.prnt("", "keyevent:" + args)
             if url:
                 weechat.hook_process("~/bin/open_url.scpt '%s'" % url ,60000, "", "")
-            
         return weechat.WEECHAT_RC_OK
 
     def scroll_buffer(self):
@@ -117,18 +127,18 @@ class URLBuffer:
             y += 1
 
     def refresh_line(self, y):
-        format = "%%s%%s %%s%%-%ds%%s%%s %%s - %%s" % (self.max_buffer_width+4)
+        format = "%%s%%s %%s%%-%ds%%s%%s %%s - %%s" % (self.max_buffer_width-4)
         color_time = "cyan"
         color_buffer = "red"
         color_info = "green"
         color_url = "blue"
-        color_bg_selected = "black"
+        color_bg_selected = "red"
 
         if y == self.current_line:
             color_time = "%s,%s" % (color_time, color_bg_selected)
             color_buffer = "%s,%s" % (color_buffer, color_bg_selected)
-            color_info = "%s,%s" % (color_info, "")
-            color_url = "%s,%s" % (color_url, "")
+            color_info = "%s,%s" % (color_info, color_bg_selected)
+            color_url = "%s,%s" % (color_url, color_bg_selected)
 
         color_time = weechat.color(color_time)
         color_buffer = weechat.color(color_buffer)
@@ -152,7 +162,6 @@ class URLBuffer:
         if self.max_buffer_width < len(bufferp):
             self.max_buffer_width = len(bufferp)
 
-        
 def buffer_input_cb(data, buffer, input_data):
     return weechat.WEECHAT_RC_OK
 
