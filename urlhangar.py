@@ -22,7 +22,7 @@ class URLBuffer:
         self.url_infos = {}
         self.urls = []
         self.current_line = 0
-        self.max_url_size = 100
+        self.max_url_size = 200
         self.max_buffer_width = 0
 
         url_buffer = weechat.buffer_new("#url_hangar", "buffer_input_cb",  "", "buffer_close_cb", "")
@@ -117,28 +117,34 @@ class URLBuffer:
             y += 1
 
     def refresh_line(self, y):
-        format = "%%s%%s %%s%%-%ds%%s%%s" % (self.max_buffer_width+4)
+        format = "%%s%%s %%s%%-%ds%%s%%s %%s - %%s" % (self.max_buffer_width+4)
         color_time = "cyan"
         color_buffer = "red"
+        color_info = "green"
         color_url = "blue"
         color_bg_selected = "black"
+
         if y == self.current_line:
             color_time = "%s,%s" % (color_time, color_bg_selected)
             color_buffer = "%s,%s" % (color_buffer, color_bg_selected)
+            color_info = "%s,%s" % (color_info, "")
             color_url = "%s,%s" % (color_url, "")
 
         color_time = weechat.color(color_time)
         color_buffer = weechat.color(color_buffer)
+        color_info = weechat.color(color_info)
         color_url = weechat.color(color_url)
 
         url = self.urls[y]
         url_info = self.url_infos[url]
         text = format % (color_time,
-                    url_info['time'],
-                    color_buffer,
-                    url_info['buffer'],
-                    color_url,
-                    url_info['info']
+                         url_info['time'],
+                         color_buffer,
+                         url_info['buffer'],
+                         color_info,
+                         url_info['info'],
+                         color_url,
+                         url_info['url']
                          )
         weechat.prnt_y(self.url_buffer,y,text)
 
