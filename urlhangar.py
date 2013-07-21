@@ -40,15 +40,23 @@ class URLBuffer:
         weechat.buffer_set(url_buffer, "display", "1")
         self.url_buffer = url_buffer
 
-    def add_url(self, bufferp, url):
+    def add_url(self, bufferp, url, tags, message):
         buffer_name = weechat.buffer_get_string(bufferp, "short_name"),
+        info = message
+        info = info.replace(url, '')
+
+        match = re.search('(^|,)nick_([^,]*)(,|$)', tags)
+        nick = match.group(2)
         
+        # if notice
+        info = info.replace("Notice(" + nick + "):", '')
         self.url_infos[url] =  {
             "url": url,
             "buffer": buffer_name[0],
-            "time": time.strftime("%H:%M:%S")
+            "time": time.strftime("%H:%M:%S"),
+            "info": info
         }
-        
+
         if url in self.urls:
             self.urls.remove(url)
         self.urls.insert(0,url)
@@ -56,7 +64,6 @@ class URLBuffer:
             self.urls.pop()
 
     def key_event(self, data, bufferp, args):
-        weechat.prnt("", "keyevent:" + args)
         if args == 'up':
             if self.current_line > 0:
                 self.current_line = self.current_line -1
@@ -131,7 +138,8 @@ class URLBuffer:
                     color_buffer,
                     url_info['buffer'],
                     color_url,
-                    url_info['url'] )
+                    url_info['info']
+                         )
         weechat.prnt_y(self.url_buffer,y,text)
 
     def set_max_buffer_width(self, bufferp):
@@ -153,7 +161,7 @@ def url_check_cb(data, bufferp, uber_empty, tagsn, isdisplayed, ishilight, prefi
 
     global url_buffer
     for url in urlRe.findall(message):
-        url_buffer.add_url(bufferp, url)
+        url_buffer.add_url(bufferp, url, tagsn, message)
 
     url_buffer.set_max_buffer_width(bufferp)
     url_buffer.refresh()
