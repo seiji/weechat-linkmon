@@ -70,6 +70,9 @@ class URLBuffer:
         if url in self.urls:
             self.urls.remove(url)
         self.urls.insert(0,url)
+        if self.current_line < self.max_url_size -1:
+            self.current_line += 1
+            
         while len(self.urls) > self.max_url_size:
             self.urls.pop()
 
