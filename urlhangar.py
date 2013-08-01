@@ -52,7 +52,8 @@ class URLBuffer:
         if match:
             nick = match.group(2)
 
-        if nick == 'seiji':
+        # TODO: move conf
+        if nick == 'seiji' or buffer_name[0] != '#seijit':
             return
 
         # if notice

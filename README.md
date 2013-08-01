@@ -1,1 +1,1 @@
-this is weechat plugin script sample.
+this is weechat url manager
