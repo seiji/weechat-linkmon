@@ -84,16 +84,17 @@ class URLBuffer:
     def key_event(self, data, bufferp, args):
         if args == 'up':
             if self.current_line > 0:
-                url = self.urls[self.current_line]
-                if url:
-                    self.redis.setex(url, 60 * 60 * 24 * 30, 1)
+                if self.current_line < len(self.urls) - 1:
+                    url = self.urls[self.current_line]
+                    if url:
+                        self.redis.setex(url, 60 * 60 * 24 * 30, 1)
                 self.current_line = self.current_line -1
                 self.refresh_line (self.current_line + 1)
                 self.refresh_line (self.current_line)
                 self.scroll_buffer()
 
         elif args == 'down':
-            if self.current_line < len(self.urls) - 1:
+            if self.current_line < len(self.urls) - 2:
                 self.current_line = self.current_line +1
                 self.refresh_line (self.current_line - 1)
                 self.refresh_line (self.current_line)
@@ -157,17 +158,19 @@ class URLBuffer:
         color_info = weechat.color(color_info)
         color_url = weechat.color(color_url)
 
-        url = self.urls[y]
-        url_info = self.url_infos[url]
-        text = format % (color_time,
-                         url_info['time'],
-                         color_buffer,
-                         url_info['buffer'],
-                         color_info,
-                         url_info['info'],
-                         color_url,
-                         url_info['url']
-                         )
+        text = ''
+        if len(self.urls) - 1 > y :
+            url = self.urls[y]
+            url_info = self.url_infos[url]
+            text = format % (color_time,
+                             url_info['time'],
+                             color_buffer,
+                             url_info['buffer'],
+                             color_info,
+                             url_info['info'],
+                             color_url,
+                             url_info['url']
+                             )
         weechat.prnt_y(self.url_buffer,y,text)
 
     def set_max_buffer_width(self, bufferp):
