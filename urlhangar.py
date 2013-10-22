@@ -1,5 +1,6 @@
 import weechat
 import re
+import redis
 import time
 
 SCRIPT_NAME    = "urlhanger"
@@ -24,6 +25,7 @@ class URLBuffer:
         self.current_line = 0
         self.max_url_size = 200
         self.max_buffer_width = 0
+        self.redis = redis.StrictRedis(host='localhost', port=6379, db=0)
 
         url_buffer = weechat.buffer_new("#url_hangar", "buffer_input_cb",  "", "buffer_close_cb", "")
         weechat.buffer_set(url_buffer, "type", "free")
@@ -55,7 +57,9 @@ class URLBuffer:
         # TODO: move conf
         if nick == 'seiji' or buffer_name[0] != '#seijit':
             return
-
+        if self.redis.get(url):
+            return
+        
         # if notice
         info = info.replace("Notice(" + nick + "):", '')
         info = re.sub(r'\[\d{2}:\d{2}:\d{2}\]', '', info) # remove time stamp
@@ -80,6 +84,9 @@ class URLBuffer:
     def key_event(self, data, bufferp, args):
         if args == 'up':
             if self.current_line > 0:
+                url = self.urls[self.current_line]
+                if url:
+                    self.redis.setex(url, 60 * 60 * 24 * 30, 1)
                 self.current_line = self.current_line -1
                 self.refresh_line (self.current_line + 1)
                 self.refresh_line (self.current_line)
@@ -110,6 +117,7 @@ class URLBuffer:
         elif args == "enter":
             url = self.urls[self.current_line]
             if url:
+                self.redis.setex(url, 60 * 60 * 24 * 30, 1)
                 weechat.hook_process("~/bin/open_url.scpt '%s'" % url ,60000, "", "")
         return weechat.WEECHAT_RC_OK
 
